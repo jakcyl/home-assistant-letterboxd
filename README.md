@@ -17,12 +17,15 @@ A Home Assistant custom component that integrates Letterboxd RSS feeds to displa
 
 1. Open HACS in Home Assistant
 2. Go to "Integrations"
-3. Click the three dots menu (⋮) and select "Custom repositories"
-4. Add this repository URL
-5. Select "Integration" as the category
-6. Click "Add"
-7. Search for "Letterboxd" and install it
-8. Restart Home Assistant
+3. Click the three dots menu (⋮) in the top right corner
+4. Select "Custom repositories"
+5. In the "Repository" field, enter: `https://github.com/jakcyl/home-assistant-letterboxd`
+6. In the "Category" dropdown, select "Integration"
+7. Click "Add"
+8. Close the dialog and search for "Letterboxd" in HACS
+9. Click on "Letterboxd" and then click "Download"
+10. Restart Home Assistant
+11. Go to Settings → Devices & Services → Add Integration and search for "Letterboxd"
 
 ### Manual Installation
 
@@ -154,7 +157,7 @@ Ratings are extracted from the movie title in the RSS feed. If ratings don't app
 
 ## Support
 
-For issues, feature requests, or contributions, please visit the [GitHub repository](https://github.com/yourusername/home-assistant-letterboxd).
+For issues, feature requests, or contributions, please visit the [GitHub repository](https://github.com/jakcyl/home-assistant-letterboxd).
 
 ## License
 
