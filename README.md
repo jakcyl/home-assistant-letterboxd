@@ -48,14 +48,11 @@ Your Letterboxd RSS feed URL follows this format:
 https://letterboxd.com/{username}/rss/
 ```
 
+This is your **Diary** feed, which shows your movie watching activity (films you've watched and rated).
+
 For example:
 - `https://letterboxd.com/john/rss/`
 - `https://letterboxd.com/movielover/rss/`
-
-You can also use specific feed types:
-- Diary: `https://letterboxd.com/{username}/rss/`
-- Watchlist: `https://letterboxd.com/{username}/watchlist/rss/`
-- Films: `https://letterboxd.com/{username}/films/rss/`
 
 ### Adding Multiple Feeds
 
