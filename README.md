@@ -99,19 +99,7 @@ Each movie in each feed gets its own sensor entity:
 
 ## Dashboard Example
 
-Add a latest movie sensor to your dashboard with a picture-entity card:
-
-```yaml
-type: picture-entity
-entity: sensor.letterboxd_latest_movie_{feed_name}
-image: '{{ state_attr("sensor.letterboxd_latest_movie_{feed_name}", "image_url") }}'
-title: '{{ state_attr("sensor.letterboxd_latest_movie_{feed_name}", "movie_title") }}'
-tap_action:
-  action: url
-  url_path: '{{ state_attr("sensor.letterboxd_latest_movie_{feed_name}", "link") }}'
-```
-
-Or use a custom card for more detailed information:
+Add a latest movie sensor to your dashboard a markdown card:
 
 ```yaml
 type: markdown
@@ -119,9 +107,8 @@ content: |
   ## {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'movie_title') }} ({{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'year') }})
   
   **Rating:** {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'rating') }} ⭐
-  
+  ![image]({{ state_attr("sensor.letterboxd_latest_movie_{feed_name}", "image_url") }})
   **Date Added:** {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'date_added') }}
-  
   [View on Letterboxd]({{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'link') }})
 ```
 
