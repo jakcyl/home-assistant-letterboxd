@@ -20,6 +20,7 @@ from .const import (
     ATTR_LINK,
     ATTR_MOVIE_TITLE,
     ATTR_RATING,
+    ATTR_YEAR,
     CONF_FEED_NAME,
     DOMAIN,
     SENSOR_LATEST_MOVIE,
@@ -97,6 +98,7 @@ class LetterboxdLatestMovieSensor(CoordinatorEntity, SensorEntity):
         return {
             ATTR_MOVIE_TITLE: latest_movie.get(ATTR_MOVIE_TITLE),
             ATTR_RATING: latest_movie.get(ATTR_RATING),
+            ATTR_YEAR: latest_movie.get(ATTR_YEAR),
             ATTR_IMAGE_URL: latest_movie.get(ATTR_IMAGE_URL),
             ATTR_DATE_ADDED: latest_movie.get(ATTR_DATE_ADDED),
             ATTR_LINK: latest_movie.get(ATTR_LINK),
@@ -148,6 +150,7 @@ class LetterboxdMovieSensor(CoordinatorEntity, SensorEntity):
         return {
             ATTR_MOVIE_TITLE: current_movie.get(ATTR_MOVIE_TITLE),
             ATTR_RATING: current_movie.get(ATTR_RATING),
+            ATTR_YEAR: current_movie.get(ATTR_YEAR),
             ATTR_IMAGE_URL: current_movie.get(ATTR_IMAGE_URL),
             ATTR_DATE_ADDED: current_movie.get(ATTR_DATE_ADDED),
             ATTR_LINK: current_movie.get(ATTR_LINK),

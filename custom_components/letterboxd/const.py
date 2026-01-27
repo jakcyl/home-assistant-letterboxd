@@ -20,6 +20,7 @@ ATTR_DATE_ADDED = "date_added"
 ATTR_LINK = "link"
 ATTR_FEED_NAME = "feed_name"
 ATTR_MOVIES = "movies"
+ATTR_YEAR = "year"
 
 # Sensor names
 SENSOR_LATEST_MOVIE = "latest_movie"

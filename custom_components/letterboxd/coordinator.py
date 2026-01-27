@@ -18,6 +18,7 @@ from .const import (
     ATTR_LINK,
     ATTR_MOVIE_TITLE,
     ATTR_RATING,
+    ATTR_YEAR,
     CONF_FEED_NAME,
     CONF_FEED_URL,
     CONF_SCAN_INTERVAL,
@@ -89,11 +90,18 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
                             # Remove rating from title
                             title = title.split("★")[0].strip()
                         
-                        # Remove year if present in format: "Movie Title, YYYY -" or "Movie Title (YYYY)"
-                        # Handle format: "Movie Title, 2017 -" -> "Movie Title"
-                        title = re.sub(r',\s*\d{4}\s*-?\s*$', '', title)
-                        # Handle format: "Movie Title (2023)" -> "Movie Title"
-                        if "(" in title and ")" in title:
+                        # Extract year before removing it from title
+                        year = None
+                        # Handle format: "Movie Title, 2017 -" -> extract "2017"
+                        year_match = re.search(r',\s*(\d{4})\s*-?\s*$', title)
+                        if year_match:
+                            year = int(year_match.group(1))
+                            title = re.sub(r',\s*\d{4}\s*-?\s*$', '', title)
+                        # Handle format: "Movie Title (2023)" -> extract "2023"
+                        elif "(" in title and ")" in title:
+                            year_match = re.search(r'\((\d{4})\)', title)
+                            if year_match:
+                                year = int(year_match.group(1))
                             title = title.rsplit("(", 1)[0].strip()
                         title = title.strip()
 
@@ -127,6 +135,7 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
                         movie_data = {
                             ATTR_MOVIE_TITLE: title,
                             ATTR_RATING: rating,
+                            ATTR_YEAR: year,
                             ATTR_IMAGE_URL: image_url,
                             ATTR_DATE_ADDED: date_added or entry.get("published", ""),
                             ATTR_LINK: link,
