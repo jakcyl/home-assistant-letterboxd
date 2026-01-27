@@ -1,7 +1,7 @@
 # Letterboxd Home Assistant Custom Component
 
 A Home Assistant custom component that integrates Letterboxd RSS feeds to display your movie watching activity.
-
+<img width="485" height="359" alt="image" src="https://github.com/user-attachments/assets/b9f0430c-b718-44c0-972c-ffadad904429" />
 ## Features
 
 - 📽️ **Multiple Feed Support**: Add one or more Letterboxd RSS feeds
