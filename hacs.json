@@ -1,0 +1,6 @@
+{
+  "name": "Letterboxd",
+  "render_readme": true,
+  "domains": ["letterboxd"],
+  "iot_class": "Cloud Polling"
+}

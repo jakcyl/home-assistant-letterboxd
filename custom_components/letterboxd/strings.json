@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add Letterboxd Feed",
+        "description": "Enter your Letterboxd RSS feed URL. You can add multiple feeds.",
+        "data": {
+          "feed_url": "Feed URL",
+          "feed_name": "Feed Name (optional)",
+          "scan_interval": "Update Interval (minutes)"
+        }
+      },
+      "add_another": {
+        "title": "Add Another Feed?",
+        "description": "Would you like to add another Letterboxd feed?",
+        "data": {
+          "add_another": "Add another feed"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the feed. Please check the URL and try again.",
+      "invalid_feed": "The feed URL does not appear to be a valid Letterboxd feed.",
+      "feed_url_required": "Feed URL is required",
+      "feed_already_added": "This feed has already been added",
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "This feed is already configured"
+    }
+  }
+}
