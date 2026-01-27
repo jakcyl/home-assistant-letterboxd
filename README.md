@@ -107,7 +107,7 @@ content: |
   ## {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'movie_title') }} ({{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'year') }})
   
   **Rating:** {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'rating') }} ⭐
-  ![image]({{ state_attr("sensor.letterboxd_latest_movie_{feed_name}", "image_url") }})
+  <img src="{{ state_attr("sensor.letterboxd_latest_movie_{feed_name}", "image_url") }}" width="200">
   **Date Added:** {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'date_added') }}
   [View on Letterboxd]({{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'link') }})
 ```
