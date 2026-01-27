@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -87,16 +88,20 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
                             rating = stars + (0.5 if half_star else 0)
                             # Remove rating from title
                             title = title.split("★")[0].strip()
-                            # Remove year if present: "Movie Title (2023)" -> "Movie Title"
-                            if "(" in title and ")" in title:
-                                title = title.rsplit("(", 1)[0].strip()
+                        
+                        # Remove year if present in format: "Movie Title, YYYY -" or "Movie Title (YYYY)"
+                        # Handle format: "Movie Title, 2017 -" -> "Movie Title"
+                        title = re.sub(r',\s*\d{4}\s*-?\s*$', '', title)
+                        # Handle format: "Movie Title (2023)" -> "Movie Title"
+                        if "(" in title and ")" in title:
+                            title = title.rsplit("(", 1)[0].strip()
+                        title = title.strip()
 
                         # Extract image URL from entry content or summary
                         image_url = None
                         if hasattr(entry, "content") and entry.content:
                             for content in entry.content:
                                 if "img" in content.get("value", "").lower():
-                                    import re
                                     img_match = re.search(
                                         r'<img[^>]+src=["\']([^"\']+)["\']',
                                         content.get("value", ""),
@@ -104,7 +109,6 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
                                     if img_match:
                                         image_url = img_match.group(1)
                         elif hasattr(entry, "summary"):
-                            import re
                             img_match = re.search(
                                 r'<img[^>]+src=["\']([^"\']+)["\']',
                                 entry.summary,

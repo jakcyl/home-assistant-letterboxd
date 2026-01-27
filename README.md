@@ -152,6 +152,16 @@ Each feed can have its own update interval, configured during setup:
 
 Ratings are extracted from the movie title in the RSS feed. If ratings don't appear, the feed format may have changed.
 
+### Logo Not Showing
+
+The integration logo is included in this repository but may not appear in Home Assistant's integration list until it's added to the [Home Assistant Brands repository](https://github.com/home-assistant/brands). To have the logo displayed:
+
+1. Fork the [home-assistant/brands](https://github.com/home-assistant/brands) repository
+2. Add your logo to `custom_integrations/letterboxd/logo.png`
+3. Submit a pull request
+
+Alternatively, the logo will work once the integration is added to the brands repository by the maintainers.
+
 ## Support
 
 For issues, feature requests, or contributions, please visit the [GitHub repository](https://github.com/jakcyl/home-assistant-letterboxd).
