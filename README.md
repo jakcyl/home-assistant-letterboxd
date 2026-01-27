@@ -73,7 +73,8 @@ For each feed, a latest movie sensor is created:
 - **Entity ID**: `sensor.letterboxd_latest_movie_{feed_name}`
 - **State**: Title of the most recent movie in that feed
 - **Attributes**:
-  - `movie_title`: Movie title
+  - `movie_title`: Movie title (cleaned, without year)
+  - `year`: Release year of the movie (as integer, e.g., 2017)
   - `rating`: Rating as a number (0-5, can include 0.5 for half stars)
   - `image_url`: Poster image URL
   - `date_added`: Date when the movie was added
@@ -84,9 +85,10 @@ For each feed, a latest movie sensor is created:
 
 Each movie in each feed gets its own sensor entity:
 - **Entity ID**: `sensor.letterboxd_movie_{feed_name}_{movie_title}`
-- **State**: Movie title
+- **State**: Movie title (cleaned, without year)
 - **Attributes**:
-  - `movie_title`: Movie title
+  - `movie_title`: Movie title (cleaned, without year)
+  - `year`: Release year of the movie (as integer, e.g., 2017)
   - `rating`: Rating as a number (0-5, can include 0.5 for half stars)
   - `image_url`: Poster image URL
   - `date_added`: Date when the movie was added
@@ -114,7 +116,7 @@ Or use a custom card for more detailed information:
 ```yaml
 type: markdown
 content: |
-  ## {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'movie_title') }}
+  ## {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'movie_title') }} ({{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'year') }})
   
   **Rating:** {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'rating') }} ⭐
   
