@@ -98,6 +98,7 @@ Each movie in each feed gets its own sensor entity:
 **Note**: Movies are properly separated by feed. Even if the same movie appears in multiple feeds, each will have its own entity with a unique ID based on the feed name.
 
 ## Dashboard Example
+<img width="485" height="359" alt="image" src="https://github.com/user-attachments/assets/b9f0430c-b718-44c0-972c-ffadad904429" />
 
 Add a latest movie sensor to your dashboard a markdown card:
 
