@@ -105,13 +105,16 @@ Add a latest movie sensor to your dashboard a markdown card:
 ```yaml
 type: markdown
 content: >
-  {% set img_url = state_attr("sensor.letterboxd_latest_movie_{feed_name}", "image_url")%} 
-  {% set link_url =state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'link')%}
-  ### {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'movie_title') }} ({{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'year') }}) ⭐{{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'rating') }} 
-  <div style="text-align: center;"><a href="{{ link_url }}" target="_blank"><img src="{{ img_url }}" width="200"></a></div>
+  {% set img_url = state_attr("sensor.letterboxd_latest_movie_{feed_name}",
+  "image_url")%} {% set link_url
+  =state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'link')%}
 
-  **Date Added:** {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'date_added') }}
-  [View on Letterboxd]({{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'link') }})
+  ### {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'movie_title') }}
+  ({{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'year') }}) ⭐{{
+  state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'rating') }} 
+
+  <div style="text-align: center;"><a href="{{ link_url }}" target="_blank"><img
+  src="{{ img_url }}" style="border-radius: 8px; display: block;"></a></div>
 ```
 
 Replace `{feed_name}` with your actual feed name (e.g., `sensor.letterboxd_latest_movie_my_diary`).
