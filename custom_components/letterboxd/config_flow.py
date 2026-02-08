@@ -15,10 +15,13 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
 from .const import (
+    CONF_EXPOSE_AS_DEVICES,
     CONF_FEEDS,
     CONF_FEED_NAME,
     CONF_FEED_URL,
+    CONF_MAX_MOVIES,
     CONF_SCAN_INTERVAL,
+    DEFAULT_MAX_MOVIES,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
 )
@@ -83,10 +86,14 @@ class LetterboxdConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         feed_name = feed_info.get("title", feed_url.split("/")[-2] if "/" in feed_url else "Letterboxd Feed")
 
                     scan_interval = user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+                    max_movies = user_input.get(CONF_MAX_MOVIES, DEFAULT_MAX_MOVIES)
+                    expose_as_devices = user_input.get(CONF_EXPOSE_AS_DEVICES, False)
                     self.feeds.append({
                         CONF_FEED_URL: feed_url,
                         CONF_FEED_NAME: feed_name,
                         CONF_SCAN_INTERVAL: scan_interval,
+                        CONF_MAX_MOVIES: max_movies,
+                        CONF_EXPOSE_AS_DEVICES: expose_as_devices,
                     })
                     return await self.async_step_add_another()
 
@@ -108,6 +115,11 @@ class LetterboxdConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_SCAN_INTERVAL,
                         default=DEFAULT_SCAN_INTERVAL,
                     ): vol.All(vol.Coerce(int), vol.Range(min=60, max=10080)),  # 1 hour to 1 week
+                    vol.Optional(
+                        CONF_MAX_MOVIES,
+                        default=DEFAULT_MAX_MOVIES,
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1, max=50)),
+                    vol.Optional(CONF_EXPOSE_AS_DEVICES, default=False): bool,
                 }
             ),
             errors=errors,

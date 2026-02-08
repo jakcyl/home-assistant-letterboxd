@@ -7,7 +7,9 @@
         "data": {
           "feed_url": "Feed URL",
           "feed_name": "Feed Name (optional)",
-          "scan_interval": "Update Interval (minutes)"
+          "scan_interval": "Update Interval (minutes)",
+          "max_movies": "Number of recent movies to show",
+          "expose_movies_as_devices": "Expose movies as devices"
         }
       },
       "add_another": {

@@ -1,0 +1,13 @@
+---
+description: Python/HA conventions for Letterboxd component
+globs: custom_components/letterboxd/**/*.py
+alwaysApply: false
+---
+
+# Letterboxd Component – Python / Home Assistant Conventions
+
+- **Constants**: Use `const.py` for all string literals (CONF_*, ATTR_*, domain, defaults). Do not hardcode attribute names or config keys in coordinator or sensor.
+- **Data flow**: Feed fetch and RSS parsing belong in the coordinator. Sensors only read from `coordinator.data` and expose attributes; no direct HTTP or parsing in sensor code.
+- **Async**: Use async/await for I/O. No blocking calls (e.g. no synchronous `feedparser.parse` on a URL without async fetch first); use `aiohttp` for HTTP in the coordinator.
+- **Entities**: New attributes must be added in both the coordinator movie dict and in the sensor’s `extra_state_attributes` (latest-movie and movie sensors as applicable). Use constants from `const.py` for attribute keys.
+- **Imports**: Prefer project imports from `.const`, `.coordinator`; keep `re` and other stdlib at top of file.

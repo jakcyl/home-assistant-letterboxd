@@ -5,11 +5,12 @@ A Home Assistant custom component that integrates Letterboxd RSS feeds to displa
 ## Features
 
 - 📽️ **Multiple Feed Support**: Add one or more Letterboxd RSS feeds
-- 🎬 **Individual Movie Entities**: Each movie gets its own sensor entity with full details
-- ⭐ **Latest Movie Sensor**: One per feed, automatically tracks the most recent movie
-- 🔄 **Per-Feed Update Intervals**: Configure update frequency individually for each feed (1 hour to 1 week)
-- 📊 **Dashboard Ready**: Latest movie sensors perfect for dashboard cards
-- 🔗 **Proper Separation**: Movies from different feeds are properly separated even if they're the same movie
+- 📚 **Persistent Movie History**: Each RSS scan merges new movies into a stored history per feed (kept across restarts)
+- 📊 **Last X Movies**: Choose how many recent movies to show (1–50, default 5) for efficient, dynamic dashboards
+- ⭐ **Latest Movie Sensor**: One per feed; plus a **Recent Movies** sensor with a `movies` list attribute for cards
+- 🎬 **Optional Movie Devices**: Expose the last X movies as HA devices, each with image (poster), title, rating, year, and date added entities
+- 🔄 **Per-Feed Update Intervals**: Configure refresh interval per feed (1 hour to 1 week)
+- 🔗 **Proper Separation**: Movies from different feeds are properly separated
 
 ## Installation
 
@@ -57,69 +58,67 @@ For example:
 ### Adding Multiple Feeds
 
 During setup, you can add multiple feeds:
-1. Enter the first feed URL, optional name, and update interval (default: 6 hours)
+1. Enter the first feed URL, optional name, update interval (default: 6 hours), **number of recent movies to show** (1–50, default 5), and optionally **Expose movies as devices**
 2. Click "Submit"
 3. Choose to add another feed
 4. Repeat until all feeds are added
 5. Finish setup
 
-**Update Interval**: Set how often each feed should be checked (in minutes). Range: 60 minutes (1 hour) to 10080 minutes (1 week). Default: 360 minutes (6 hours).
+**Update Interval**: How often each feed is checked (minutes). Range: 60 (1 hour) to 10080 (1 week). Default: 360 (6 hours).
+
+**Number of recent movies to show**: The last X movies from your stored history are used for the Recent Movies sensor and (if enabled) for movie devices. Default: 5.
+
+**Expose movies as devices**: When enabled, each of the last X movies is created as a Home Assistant device with entities: poster image, title, rating, year, date added.
 
 ## Entities
 
-### Latest Movie Sensors (One Per Feed)
+### Latest Movie Sensor (One Per Feed)
 
-For each feed, a latest movie sensor is created:
 - **Entity ID**: `sensor.letterboxd_latest_movie_{feed_name}`
-- **State**: Title of the most recent movie in that feed
-- **Attributes**:
-  - `movie_title`: Movie title (cleaned, without year)
-  - `year`: Release year of the movie (as integer, e.g., 2017)
-  - `rating`: Rating as a number (0-5, can include 0.5 for half stars)
-  - `image_url`: Poster image URL
-  - `date_added`: Date when the movie was added
-  - `link`: Link to the Letterboxd page
-  - `feed_name`: Name of the feed this movie came from
+- **State**: Title of the most recent movie
+- **Attributes**: `movie_title`, `year`, `rating`, `image_url`, `date_added`, `link`, `feed_name`
 
-### Individual Movie Sensors
+### Recent Movies Sensor (One Per Feed)
 
-Each movie in each feed gets its own sensor entity:
-- **Entity ID**: `sensor.letterboxd_movie_{feed_name}_{movie_title}`
-- **State**: Movie title (cleaned, without year)
-- **Attributes**:
-  - `movie_title`: Movie title (cleaned, without year)
-  - `year`: Release year of the movie (as integer, e.g., 2017)
-  - `rating`: Rating as a number (0-5, can include 0.5 for half stars)
-  - `image_url`: Poster image URL
-  - `date_added`: Date when the movie was added
-  - `link`: Link to the Letterboxd page
-  - `feed_name`: Name of the feed this movie came from
+- **Entity ID**: `sensor.letterboxd_recent_movies_{feed_name}`
+- **State**: Count of recent movies (the number you configured as "last X")
+- **Attribute `movies`**: List of the last X movies (newest first). Each item has: `movie_title`, `year`, `rating`, `image_url`, `date_added`, `link`, `feed_name`. Use this in markdown or template cards to display the list dynamically without typing movie names.
 
-**Note**: Movies are properly separated by feed. Even if the same movie appears in multiple feeds, each will have its own entity with a unique ID based on the feed name.
+### Movie Devices (Optional)
 
-## Dashboard Example
-<img width="485" height="359" alt="image" src="https://github.com/user-attachments/assets/b9f0430c-b718-44c0-972c-ffadad904429" />
+If **Expose movies as devices** is enabled for a feed, each of the last X movies appears as a **device** in Home Assistant with these entities:
+- **Image**: Poster (image entity)
+- **Sensor (title)**: Movie title
+- **Sensor (rating)**: Rating (number)
+- **Sensor (year)**: Release year
+- **Sensor (date added)**: Date when the movie was added to your activity
 
-Add a latest movie sensor to your dashboard a markdown card:
+Movies are separated by feed; the same movie in two feeds appears as two devices.
+
+## Dashboard Examples
+
+**Latest movie** (single movie, one feed):
 
 ```yaml
 type: markdown
 content: >
-  {% set img_url = state_attr("sensor.letterboxd_latest_movie_{feed_name}",
-  "image_url")%} {% set link_url
-  =state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'link')%}
-
-  ### {{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'movie_title') }}
-  ({{ state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'year') }}) ⭐{{
-  state_attr('sensor.letterboxd_latest_movie_{feed_name}', 'rating') }} 
-
-  <div style="text-align: center;"><a href="{{ link_url }}" target="_blank"><img
-  src="{{ img_url }}" style="border-radius: 8px; display: block;"></a></div>
+  {% set e = 'sensor.letterboxd_latest_movie_{feed_name}' %}
+  ### {{ state_attr(e, 'movie_title') }} ({{ state_attr(e, 'year') }}) ⭐{{ state_attr(e, 'rating') }}
+  <div style="text-align: center;"><a href="{{ state_attr(e, 'link') }}" target="_blank"><img src="{{ state_attr(e, 'image_url') }}" style="border-radius: 8px;"></a></div>
 ```
 
-Replace `{feed_name}` with your actual feed name (e.g., `sensor.letterboxd_latest_movie_my_diary`).
+**Last X movies** (dynamic list from Recent Movies sensor; replace `fabri` with your feed name):
 
-You can also use individual movie sensors for more granular control or to display multiple movies.
+```yaml
+type: markdown
+content: >
+  {% set movies = state_attr('sensor.letterboxd_recent_movies_{feed_name}', 'movies') or [] %}
+  {% for m in movies %}
+  - **{{ m.movie_title }}** ({{ m.year }}) ⭐{{ m.rating }}
+  {% endfor %}
+```
+
+If you enabled **Expose movies as devices**, you can use the image and sensor entities of each movie device on your dashboard (e.g. picture-entity cards per device).
 
 ## Update Frequency
 
