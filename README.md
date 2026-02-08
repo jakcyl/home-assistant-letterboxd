@@ -8,7 +8,7 @@ A Home Assistant custom component that integrates Letterboxd RSS feeds to displa
 - 📚 **Persistent Movie History**: Each RSS scan merges new movies into a stored history per feed (kept across restarts)
 - 📊 **Last X Movies**: Choose how many recent movies to show (1–50, default 5) for efficient, dynamic dashboards
 - ⭐ **Latest Movie Sensor**: One per feed; plus a **Recent Movies** sensor with a `movies` list attribute for cards
-- 🎬 **Optional Movie Devices**: Expose the last X movies as HA devices, each with image (poster), title, rating, year, and date added entities
+- 🎬 **Optional Movie Devices**: Expose the last N movies as HA devices (N configurable), each with image (poster), title, rating, year, and date added entities; entity IDs are prefixed with `letterboxd_`
 - 🔄 **Per-Feed Update Intervals**: Configure refresh interval per feed (1 hour to 1 week)
 - 🔗 **Proper Separation**: Movies from different feeds are properly separated
 
@@ -58,7 +58,7 @@ For example:
 ### Adding Multiple Feeds
 
 During setup, you can add multiple feeds:
-1. Enter the first feed URL, optional name, update interval (default: 6 hours), **number of recent movies to show** (1–50, default 5), and optionally **Expose movies as devices**
+1. Enter the first feed URL, optional name, update interval (default: 6 hours), **number of recent movies to show** (1–50, default 5), **max movies to expose as devices** (1–50, used when exposing as devices), and optionally **Expose movies as devices**
 2. Click "Submit"
 3. Choose to add another feed
 4. Repeat until all feeds are added
@@ -86,14 +86,15 @@ During setup, you can add multiple feeds:
 
 ### Movie Devices (Optional)
 
-If **Expose movies as devices** is enabled for a feed, each of the last X movies appears as a **device** in Home Assistant with these entities:
-- **Image**: Poster (image entity)
-- **Sensor (title)**: Movie title
-- **Sensor (rating)**: Rating (number)
-- **Sensor (year)**: Release year
-- **Sensor (date added)**: Date when the movie was added to your activity
+If **Expose movies as devices** is enabled for a feed, each of the last N movies (N = "Max movies to expose as devices") appears as a **device** in Home Assistant with these entities:
 
-Movies are separated by feed; the same movie in two feeds appears as two devices.
+- **Image**: Poster (image entity) — entity IDs like `image.letterboxd_poster`, `image.letterboxd_poster_2`, …
+- **Sensor (title)**: Movie title — `sensor.letterboxd_title`, `sensor.letterboxd_title_2`, …
+- **Sensor (rating)**: Rating (number) — `sensor.letterboxd_rating`, …
+- **Sensor (year)**: Release year — `sensor.letterboxd_year`, …
+- **Sensor (date added)**: Date when the movie was added — `sensor.letterboxd_date_added`, …
+
+All device entity IDs are prefixed with `letterboxd_` so they are easy to find and do not clash with generic names. Only the **most recently watched** N movies get a device; older history is not exposed as devices. Movies are separated by feed; the same movie in two feeds appears as two devices.
 
 ## Dashboard Examples
 
