@@ -36,10 +36,11 @@ async def async_setup_entry(
         feed_config = feed_coordinator.feed_config
         if not feed_config.get(CONF_EXPOSE_AS_DEVICES, False):
             continue
-        if not feed_coordinator.data or not feed_coordinator.data.get("movies"):
+        device_movies = (feed_coordinator.data or {}).get("movies_for_devices") or (feed_coordinator.data or {}).get("movies") or []
+        if not device_movies:
             continue
 
-        for movie in feed_coordinator.data["movies"]:
+        for movie in device_movies:
             movie_uid = movie.get("unique_id", "")
             device_info = DeviceInfo(
                 identifiers={(DOMAIN, movie_uid)},
@@ -99,13 +100,24 @@ class LetterboxdMoviePosterImage(CoordinatorEntity, ImageEntity):
 
     @property
     def image_url(self) -> str | None:
-        """Return the URL of the poster image."""
+        """Return the URL of the poster image, or a placeholder so the entity stays valid."""
         movies = self.coordinator.data.get("movies", []) if self.coordinator.data else []
         current = next(
             (m for m in movies if m.get("unique_id") == self._movie_uid),
             self._movie,
         )
-        return current.get(ATTR_IMAGE_URL)
+        url = current.get(ATTR_IMAGE_URL)
+        if url and isinstance(url, str) and url.strip():
+            return url.strip()
+        # Placeholder so the entity has a valid URL and does not show as unavailable
+        return "https://placehold.co/300x450/png?text=No+poster"
+
+    @property
+    def available(self) -> bool:
+        """Return True when coordinator has succeeded and we have movie data."""
+        if not self.coordinator.last_update_success:
+            return False
+        return bool(self._movie and self._movie.get("unique_id"))
 
     def _handle_coordinator_update(self) -> None:
         """Handle coordinator update: bump image_last_updated so frontend refetches."""

@@ -68,7 +68,7 @@ During setup, you can add multiple feeds:
 
 **Number of recent movies to show**: The last X movies from your stored history are used for the Recent Movies sensor and (if enabled) for movie devices. Default: 5.
 
-**Expose movies as devices**: When enabled, each of the last X movies is created as a Home Assistant device with entities: poster image, title, rating, year, date added.
+**Expose movies as devices**: When enabled, each of the last N movies is created as a Home Assistant device with entities: poster image, title, rating, year, date added. **Max movies to expose as devices**: How many of your most recent movies get a device (1–50). Can be higher than "Number of recent movies to show" (e.g. show 5 in the list but create devices for the last 25). Older entries in your history are not exposed as devices.
 
 ## Entities
 
@@ -126,6 +126,10 @@ Each feed can have its own update interval, configured during setup:
 - **Default**: 360 minutes (6 hours)
 - **Range**: 60 minutes (1 hour) to 10080 minutes (1 week)
 - **Per Feed**: Each feed updates independently according to its configured interval
+
+## Notes
+
+- **Re-adding the integration**: If you remove and re-add the Letterboxd integration, a new config entry is created. Stored movie history is tied to the previous entry, so you will start with a fresh history (only movies from the next RSS fetches will be stored). To keep history, reconfigure the existing integration instead of removing it.
 
 ## Troubleshooting
 

@@ -19,8 +19,10 @@ from .const import (
     CONF_FEEDS,
     CONF_FEED_NAME,
     CONF_FEED_URL,
+    CONF_MAX_DEVICES,
     CONF_MAX_MOVIES,
     CONF_SCAN_INTERVAL,
+    DEFAULT_MAX_DEVICES,
     DEFAULT_MAX_MOVIES,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -88,11 +90,16 @@ class LetterboxdConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     scan_interval = user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
                     max_movies = user_input.get(CONF_MAX_MOVIES, DEFAULT_MAX_MOVIES)
                     expose_as_devices = user_input.get(CONF_EXPOSE_AS_DEVICES, False)
+                    max_devices = user_input.get(
+                        CONF_MAX_DEVICES,
+                        max_movies if expose_as_devices else DEFAULT_MAX_DEVICES,
+                    )
                     self.feeds.append({
                         CONF_FEED_URL: feed_url,
                         CONF_FEED_NAME: feed_name,
                         CONF_SCAN_INTERVAL: scan_interval,
                         CONF_MAX_MOVIES: max_movies,
+                        CONF_MAX_DEVICES: max_devices,
                         CONF_EXPOSE_AS_DEVICES: expose_as_devices,
                     })
                     return await self.async_step_add_another()
@@ -120,6 +127,10 @@ class LetterboxdConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         default=DEFAULT_MAX_MOVIES,
                     ): vol.All(vol.Coerce(int), vol.Range(min=1, max=50)),
                     vol.Optional(CONF_EXPOSE_AS_DEVICES, default=False): bool,
+                    vol.Optional(
+                        CONF_MAX_DEVICES,
+                        default=DEFAULT_MAX_DEVICES,
+                    ): vol.All(vol.Coerce(int), vol.Range(min=1, max=50)),
                 }
             ),
             errors=errors,

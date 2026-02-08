@@ -56,8 +56,9 @@ async def async_setup_entry(
             )
         )
 
-        if expose_as_devices and feed_coordinator.data and feed_coordinator.data.get("movies"):
-            for movie in feed_coordinator.data["movies"]:
+        device_movies = (feed_coordinator.data or {}).get("movies_for_devices") or (feed_coordinator.data or {}).get("movies") or []
+        if expose_as_devices and device_movies:
+            for movie in device_movies:
                 movie_uid = movie.get("unique_id", "")
                 device_info = DeviceInfo(
                     identifiers={(DOMAIN, movie_uid)},

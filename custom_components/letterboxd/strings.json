@@ -9,6 +9,7 @@
           "feed_name": "Feed Name (optional)",
           "scan_interval": "Update Interval (minutes)",
           "max_movies": "Number of recent movies to show",
+          "max movies as devices": "Max movies to expose as devices",
           "expose_movies_as_devices": "Expose movies as devices"
         }
       },

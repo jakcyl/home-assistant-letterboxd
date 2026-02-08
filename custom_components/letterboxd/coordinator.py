@@ -22,6 +22,7 @@ from .const import (
     ATTR_YEAR,
     CONF_FEED_NAME,
     CONF_FEED_URL,
+    CONF_MAX_DEVICES,
     CONF_MAX_MOVIES,
     CONF_SCAN_INTERVAL,
     DEFAULT_MAX_MOVIES,
@@ -51,6 +52,9 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
         self.feed_name = feed_config.get(CONF_FEED_NAME, self.feed_url)
         self.scan_interval = feed_config.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         self.max_movies = feed_config.get(CONF_MAX_MOVIES, DEFAULT_MAX_MOVIES)
+        self.max_devices = feed_config.get(
+            CONF_MAX_DEVICES, feed_config.get(CONF_MAX_MOVIES, DEFAULT_MAX_MOVIES)
+        )
         self.entry_id = entry_id
         self._store = Store(
             hass,
@@ -80,8 +84,10 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
                         )
                         stored = await self._load_stored()
                         movies = stored[: self.max_movies]
+                        movies_for_devices = stored[: self.max_devices]
                         return {
                             "movies": movies,
+                            "movies_for_devices": movies_for_devices,
                             "latest_movie": movies[0] if movies else None,
                             "feed_url": self.feed_url,
                             "last_update": datetime.now().isoformat(),
@@ -156,8 +162,10 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Error fetching feed %s: %s", self.feed_name, err)
             stored = await self._load_stored()
             movies = stored[: self.max_movies]
+            movies_for_devices = stored[: self.max_devices]
             return {
                 "movies": movies,
+                "movies_for_devices": movies_for_devices,
                 "latest_movie": movies[0] if movies else None,
                 "feed_url": self.feed_url,
                 "last_update": datetime.now().isoformat(),
@@ -167,8 +175,10 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
             _LOGGER.exception("Unexpected error processing feed %s: %s", self.feed_name, err)
             stored = await self._load_stored()
             movies = stored[: self.max_movies]
+            movies_for_devices = stored[: self.max_devices]
             return {
                 "movies": movies,
+                "movies_for_devices": movies_for_devices,
                 "latest_movie": movies[0] if movies else None,
                 "feed_url": self.feed_url,
                 "last_update": datetime.now().isoformat(),
@@ -193,10 +203,12 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
         await self._save_stored(stored_list)
 
         movies = stored_list[: self.max_movies]
+        movies_for_devices = stored_list[: self.max_devices]
         latest_movie = movies[0] if movies else None
 
         return {
             "movies": movies,
+            "movies_for_devices": movies_for_devices,
             "latest_movie": latest_movie,
             "feed_url": self.feed_url,
             "last_update": datetime.now().isoformat(),

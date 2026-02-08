@@ -12,10 +12,12 @@ CONF_FEED_URL = "Feed url"
 CONF_FEED_NAME = "Feed name"
 CONF_SCAN_INTERVAL = "Scan interval"
 CONF_MAX_MOVIES = "max last movies"
+CONF_MAX_DEVICES = "max movies as devices"
 CONF_EXPOSE_AS_DEVICES = "movies as devices"
 
 # Defaults
 DEFAULT_MAX_MOVIES = 5
+DEFAULT_MAX_DEVICES = 5
 MAX_STORED_MOVIES = 500
 
 # Sensor attributes
