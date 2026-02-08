@@ -1,0 +1,54 @@
+---
+description: Letterboxd HA component – project context and status
+alwaysApply: true
+---
+
+# Letterboxd Home Assistant Component – Project Context
+
+## Project
+
+Home Assistant custom integration for Letterboxd RSS feeds. Repository: `jakcyl/home-assistant-letterboxd`. Users add one or more feed URLs at setup. Movie history is stored per feed (persistent); user chooses "last X" for dashboard and can optionally expose those movies as HA devices (image, title, rating, year, date added).
+
+## Tech
+
+- Python 3, Home Assistant integration APIs
+- Dependencies: `feedparser`, `aiohttp` (see manifest.json)
+- Config flow for multi-feed setup; DataUpdateCoordinator per feed; Sensor platform
+- Feed URL format: `https://letterboxd.com/{username}/rss/` (Activity/Diary feed)
+
+## Structure
+
+- **Root**: `custom_components/letterboxd/` (all integration code), `README.md`, `hacs.json`, `STRUCTURE.md`
+- **Key files**: `__init__.py`, `config_flow.py`, `const.py`, `coordinator.py`, `sensor.py`, `image.py`, `manifest.json`, `strings.json`, `logo.png`
+
+```mermaid
+flowchart LR
+  ConfigFlow[config_flow] --> Init[__init__]
+  Init --> Coord[coordinator]
+  Coord -->|"RSS parse, Store merge, slice X"| Data[movies, latest_movie]
+  Data --> Sensor[sensor]
+  Data --> Image[image]
+  Sensor --> Latest[Latest Movie]
+  Sensor --> Recent[Recent Movies list]
+  Sensor --> MovieDevices[per-movie sensors when enabled]
+  Image --> MovieDevices
+```
+
+## Current Status
+
+- **Version**: 1.0.3 (or next)
+- **Architecture**: One coordinator per feed; per-feed Store for persistent movie history; merge RSS into Store each refresh; slice to last X for entities
+- **Entities per feed**: Latest Movie sensor; Recent Movies sensor (state = count, attribute `movies` = list of last X). Optional: when "Expose movies as devices" is on, each of the last X movies is a Device with image (poster), title, rating, year, date_added entities
+- **Attributes**: `movie_title`, `year`, `rating`, `image_url`, `date_added`, `link`, `feed_name`; Recent Movies also has `movies` (list of dicts)
+- **Parsing**: Title cleaned (strips ", YYYY -" and "(YYYY)"); year extracted and exposed as integer `year`
+
+## Conventions
+
+- New constants go in `custom_components/letterboxd/const.py`
+- New attributes: add to coordinator movie dict and to sensor `extra_state_attributes` in `sensor.py`
+- Releases: bump version in `manifest.json`, update README if needed, commit, tag (e.g. v1.0.3), push and push tags
+- When adding attributes or behavior, update README.md
+
+## Next Moves
+
+
