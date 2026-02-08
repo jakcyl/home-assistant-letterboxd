@@ -93,7 +93,7 @@ class LetterboxdMoviePosterImage(CoordinatorEntity, ImageEntity):
         self._movie = movie
         self._movie_uid = movie.get("unique_id", "")
         self._attr_device_info = device_info
-        self._attr_name = "Letterboxd Poster"
+        self._attr_name = f"Letterboxd {feed_slug(feed_name)} Poster"
         self._attr_unique_id = f"{coordinator.entry_id}_{feed_name}_{self._movie_uid}_poster"
         self._attr_suggested_object_id = f"letterboxd_{feed_slug(feed_name)}_{movie_slug(self._movie)}_poster"
         self._attr_image_last_updated = datetime.now()

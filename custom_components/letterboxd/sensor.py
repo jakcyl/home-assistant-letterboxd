@@ -224,7 +224,7 @@ class LetterboxdMovieTitleSensor(CoordinatorEntity, SensorEntity):
         self._movie = movie
         self._movie_uid = movie.get("unique_id", "")
         self._attr_device_info = device_info
-        self._attr_name = "Letterboxd Title"
+        self._attr_name = f"Letterboxd {feed_slug(feed_name)} Title"
         self._attr_unique_id = f"{coordinator.entry_id}_{feed_name}_{self._movie_uid}_title"
         self._attr_suggested_object_id = f"letterboxd_{feed_slug(feed_name)}_{movie_slug(movie)}_title"
 
@@ -251,7 +251,7 @@ class LetterboxdMovieRatingSensor(CoordinatorEntity, SensorEntity):
         self._movie = movie
         self._movie_uid = movie.get("unique_id", "")
         self._attr_device_info = device_info
-        self._attr_name = "Letterboxd Rating"
+        self._attr_name = f"Letterboxd {feed_slug(feed_name)} Rating"
         self._attr_unique_id = f"{coordinator.entry_id}_{feed_name}_{self._movie_uid}_rating"
         self._attr_suggested_object_id = f"letterboxd_{feed_slug(feed_name)}_{movie_slug(movie)}_rating"
 
@@ -278,7 +278,7 @@ class LetterboxdMovieYearSensor(CoordinatorEntity, SensorEntity):
         self._movie = movie
         self._movie_uid = movie.get("unique_id", "")
         self._attr_device_info = device_info
-        self._attr_name = "Letterboxd Year"
+        self._attr_name = f"Letterboxd {feed_slug(feed_name)} Year"
         self._attr_unique_id = f"{coordinator.entry_id}_{feed_name}_{self._movie_uid}_year"
         self._attr_suggested_object_id = f"letterboxd_{feed_slug(feed_name)}_{movie_slug(movie)}_year"
 
@@ -305,7 +305,7 @@ class LetterboxdMovieDateAddedSensor(CoordinatorEntity, SensorEntity):
         self._movie = movie
         self._movie_uid = movie.get("unique_id", "")
         self._attr_device_info = device_info
-        self._attr_name = "Letterboxd Date added"
+        self._attr_name = f"Letterboxd {feed_slug(feed_name)} Date added"
         self._attr_unique_id = f"{coordinator.entry_id}_{feed_name}_{self._movie_uid}_date_added"
         self._attr_suggested_object_id = f"letterboxd_{feed_slug(feed_name)}_{movie_slug(movie)}_date_added"
 

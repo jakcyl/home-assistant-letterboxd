@@ -8,7 +8,7 @@ A Home Assistant custom component that integrates Letterboxd RSS feeds to displa
 - 📚 **Persistent Movie History**: Each RSS scan merges new movies into a stored history per feed (kept across restarts)
 - 📊 **Last X Movies**: Choose how many recent movies to show (1–50, default 5) for efficient, dynamic dashboards
 - ⭐ **Latest Movie Sensor**: One per feed; plus a **Recent Movies** sensor with a `movies` list attribute for cards
-- 🎬 **Optional Movie Devices**: Expose the last N movies as HA devices (N configurable), each with image (poster), title, rating, year, and date added entities; entity IDs are prefixed with `letterboxd_`
+- 🎬 **Optional Movie Devices**: Expose the last N movies as HA devices (N configurable), each with image (poster), title, rating, year, and date added entities; entity IDs are prefixed with `letterboxd_{feed}_` so different feeds (e.g. different users) never overlap
 - 🔄 **Per-Feed Update Intervals**: Configure refresh interval per feed (1 hour to 1 week)
 - 🔗 **Proper Separation**: Movies from different feeds are properly separated
 
@@ -88,13 +88,13 @@ During setup, you can add multiple feeds:
 
 If **Expose movies as devices** is enabled for a feed, each of the last N movies (N = "Max movies to expose as devices") appears as a **device** in Home Assistant with these entities:
 
-- **Image**: Poster (image entity) — entity IDs like `image.letterboxd_poster`, `image.letterboxd_poster_2`, …
-- **Sensor (title)**: Movie title — `sensor.letterboxd_title`, `sensor.letterboxd_title_2`, …
-- **Sensor (rating)**: Rating (number) — `sensor.letterboxd_rating`, …
-- **Sensor (year)**: Release year — `sensor.letterboxd_year`, …
-- **Sensor (date added)**: Date when the movie was added — `sensor.letterboxd_date_added`, …
+- **Image**: Poster (image entity) — entity IDs like `image.letterboxd_{feed}_poster`, `image.letterboxd_{feed}_poster_2`, …
+- **Sensor (title)**: Movie title — `sensor.letterboxd_{feed}_title`, …
+- **Sensor (rating)**: Rating (number) — `sensor.letterboxd_{feed}_rating`, …
+- **Sensor (year)**: Release year — `sensor.letterboxd_{feed}_year`, …
+- **Sensor (date added)**: Date when the movie was added — `sensor.letterboxd_{feed}_date_added`, …
 
-All device entity IDs are prefixed with `letterboxd_` so they are easy to find and do not clash with generic names. Only the **most recently watched** N movies get a device; older history is not exposed as devices. Movies are separated by feed; the same movie in two feeds appears as two devices.
+Here `{feed}` is a slug of the feed name (e.g. `fabri`, `john`), so **different users’ feeds never overlap**: each feed gets its own prefix (e.g. `letterboxd_fabri_title`, `letterboxd_john_title`). Only the **most recently watched** N movies get a device; older history is not exposed as devices. Movies are separated by feed; the same movie in two feeds appears as two devices.
 
 ## Dashboard Examples
 
