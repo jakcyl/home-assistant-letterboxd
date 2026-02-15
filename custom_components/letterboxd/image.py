@@ -8,6 +8,7 @@ from typing import Any
 from homeassistant.components.image import ImageEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.httpx_client import get_async_client
@@ -22,24 +23,16 @@ from .coordinator import LetterboxdDataUpdateCoordinator, LetterboxdFeedCoordina
 from .helpers import feed_slug, movie_slug
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Set up Letterboxd image entities (poster per movie device)."""
-    coordinator: LetterboxdDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-
+def _device_image_entities(
+    coordinator: LetterboxdDataUpdateCoordinator,
+) -> list[ImageEntity]:
+    """Build device image entities from current coordinator data (all feeds)."""
     entities: list[ImageEntity] = []
-
     for feed_name, feed_coordinator in coordinator.feed_coordinators.items():
         feed_config = feed_coordinator.feed_config
         if not feed_config.get(CONF_EXPOSE_AS_DEVICES, False):
             continue
         device_movies = (feed_coordinator.data or {}).get("movies_for_devices") or (feed_coordinator.data or {}).get("movies") or []
-        if not device_movies:
-            continue
-
         for movie in device_movies:
             movie_uid = movie.get("unique_id", "")
             device_info = DeviceInfo(
@@ -55,8 +48,44 @@ async def async_setup_entry(
                     device_info=device_info,
                 )
             )
+    return entities
 
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Letterboxd image entities (poster per movie device)."""
+    coordinator: LetterboxdDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+
+    entities = _device_image_entities(coordinator)
     async_add_entities(entities)
+
+    async def _update_device_entities() -> None:
+        new_device = _device_image_entities(coordinator)
+        current_unique_ids = {e.unique_id for e in new_device if e.unique_id}
+        registry = er.async_get(hass)
+        to_remove = []
+        for ent in registry.entities.values():
+            if ent.config_entry_id != entry.entry_id:
+                continue
+            if not ent.entity_id.startswith("image."):
+                continue
+            if ent.unique_id and ent.unique_id.endswith("_poster"):
+                if ent.unique_id not in current_unique_ids:
+                    to_remove.append(ent.entity_id)
+        for entity_id in to_remove:
+            registry.async_remove(entity_id)
+        if new_device:
+            async_add_entities(new_device)
+
+    def _on_coordinator_update() -> None:
+        hass.async_create_task(_update_device_entities())
+
+    for feed_coordinator in coordinator.feed_coordinators.values():
+        if feed_coordinator.feed_config.get(CONF_EXPOSE_AS_DEVICES, False):
+            entry.async_on_unload(feed_coordinator.async_add_listener(_on_coordinator_update))
 
 
 def _device_name(movie: dict[str, Any]) -> str:
@@ -101,7 +130,8 @@ class LetterboxdMoviePosterImage(CoordinatorEntity, ImageEntity):
     @property
     def image_url(self) -> str | None:
         """Return the URL of the poster image, or a placeholder so the entity stays valid."""
-        movies = self.coordinator.data.get("movies", []) if self.coordinator.data else []
+        data = self.coordinator.data or {}
+        movies = data.get("movies_for_devices") or data.get("movies", [])
         current = next(
             (m for m in movies if m.get("unique_id") == self._movie_uid),
             self._movie,

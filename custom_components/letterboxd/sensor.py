@@ -6,6 +6,7 @@ from typing import Any
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -29,6 +30,58 @@ from .coordinator import LetterboxdDataUpdateCoordinator, LetterboxdFeedCoordina
 from .helpers import feed_slug, movie_slug
 
 
+def _device_sensor_entities(
+    coordinator: LetterboxdDataUpdateCoordinator,
+) -> list[SensorEntity]:
+    """Build device sensor entities from current coordinator data (all feeds)."""
+    entities: list[SensorEntity] = []
+    for feed_name, feed_coordinator in coordinator.feed_coordinators.items():
+        feed_config = feed_coordinator.feed_config
+        if not feed_config.get(CONF_EXPOSE_AS_DEVICES, False):
+            continue
+        device_movies = (feed_coordinator.data or {}).get("movies_for_devices") or (feed_coordinator.data or {}).get("movies") or []
+        for movie in device_movies:
+            movie_uid = movie.get("unique_id", "")
+            device_info = DeviceInfo(
+                identifiers={(DOMAIN, movie_uid)},
+                name=_device_name(movie),
+                entry_type=None,
+            )
+            entities.append(
+                LetterboxdMovieTitleSensor(
+                    coordinator=feed_coordinator,
+                    feed_name=feed_name,
+                    movie=movie,
+                    device_info=device_info,
+                )
+            )
+            entities.append(
+                LetterboxdMovieRatingSensor(
+                    coordinator=feed_coordinator,
+                    feed_name=feed_name,
+                    movie=movie,
+                    device_info=device_info,
+                )
+            )
+            entities.append(
+                LetterboxdMovieYearSensor(
+                    coordinator=feed_coordinator,
+                    feed_name=feed_name,
+                    movie=movie,
+                    device_info=device_info,
+                )
+            )
+            entities.append(
+                LetterboxdMovieDateAddedSensor(
+                    coordinator=feed_coordinator,
+                    feed_name=feed_name,
+                    movie=movie,
+                    device_info=device_info,
+                )
+            )
+    return entities
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -41,8 +94,6 @@ async def async_setup_entry(
 
     for feed_name, feed_coordinator in coordinator.feed_coordinators.items():
         feed_config = feed_coordinator.feed_config
-        expose_as_devices = feed_config.get(CONF_EXPOSE_AS_DEVICES, False)
-
         entities.append(
             LetterboxdLatestMovieSensor(
                 coordinator=feed_coordinator,
@@ -56,49 +107,37 @@ async def async_setup_entry(
             )
         )
 
-        device_movies = (feed_coordinator.data or {}).get("movies_for_devices") or (feed_coordinator.data or {}).get("movies") or []
-        if expose_as_devices and device_movies:
-            for movie in device_movies:
-                movie_uid = movie.get("unique_id", "")
-                device_info = DeviceInfo(
-                    identifiers={(DOMAIN, movie_uid)},
-                    name=_device_name(movie),
-                    entry_type=None,
-                )
-                entities.append(
-                    LetterboxdMovieTitleSensor(
-                        coordinator=feed_coordinator,
-                        feed_name=feed_name,
-                        movie=movie,
-                        device_info=device_info,
-                    )
-                )
-                entities.append(
-                    LetterboxdMovieRatingSensor(
-                        coordinator=feed_coordinator,
-                        feed_name=feed_name,
-                        movie=movie,
-                        device_info=device_info,
-                    )
-                )
-                entities.append(
-                    LetterboxdMovieYearSensor(
-                        coordinator=feed_coordinator,
-                        feed_name=feed_name,
-                        movie=movie,
-                        device_info=device_info,
-                    )
-                )
-                entities.append(
-                    LetterboxdMovieDateAddedSensor(
-                        coordinator=feed_coordinator,
-                        feed_name=feed_name,
-                        movie=movie,
-                        device_info=device_info,
-                    )
-                )
+    device_entities = _device_sensor_entities(coordinator)
+    async_add_entities(entities + device_entities)
 
-    async_add_entities(entities)
+    # When coordinator updates, refresh device entities so new movies get devices
+    # and stale ones are removed (dashboard stays in sync with latest watched).
+    device_suffixes = ("_title", "_rating", "_year", "_date_added")
+
+    async def _update_device_entities() -> None:
+        new_device = _device_sensor_entities(coordinator)
+        current_unique_ids = {e.unique_id for e in new_device if e.unique_id}
+        registry = er.async_get(hass)
+        to_remove = []
+        for ent in registry.entities.values():
+            if ent.config_entry_id != entry.entry_id:
+                continue
+            if not ent.entity_id.startswith("sensor."):
+                continue
+            if ent.unique_id and ent.unique_id.endswith(device_suffixes):
+                if ent.unique_id not in current_unique_ids:
+                    to_remove.append(ent.entity_id)
+        for entity_id in to_remove:
+            registry.async_remove(entity_id)
+        if new_device:
+            async_add_entities(new_device)
+
+    def _on_coordinator_update() -> None:
+        hass.async_create_task(_update_device_entities())
+
+    for feed_coordinator in coordinator.feed_coordinators.values():
+        if feed_coordinator.feed_config.get(CONF_EXPOSE_AS_DEVICES, False):
+            entry.async_on_unload(feed_coordinator.async_add_listener(_on_coordinator_update))
 
 
 def _device_name(movie: dict[str, Any]) -> str:
