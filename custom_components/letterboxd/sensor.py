@@ -118,6 +118,13 @@ async def async_setup_entry(
         new_device = _device_sensor_entities(coordinator)
         current_unique_ids = {e.unique_id for e in new_device if e.unique_id}
         registry = er.async_get(hass)
+        existing_sensor_ids = {
+            ent.unique_id
+            for ent in registry.entities.values()
+            if ent.config_entry_id == entry.entry_id
+            and ent.entity_id.startswith("sensor.")
+            and ent.unique_id
+        }
         to_remove = []
         for ent in registry.entities.values():
             if ent.config_entry_id != entry.entry_id:
@@ -129,8 +136,9 @@ async def async_setup_entry(
                     to_remove.append(ent.entity_id)
         for entity_id in to_remove:
             registry.async_remove(entity_id)
-        if new_device:
-            async_add_entities(new_device)
+        to_add = [e for e in new_device if e.unique_id and e.unique_id not in existing_sensor_ids]
+        if to_add:
+            async_add_entities(to_add)
 
     def _on_coordinator_update() -> None:
         hass.async_create_task(_update_device_entities())

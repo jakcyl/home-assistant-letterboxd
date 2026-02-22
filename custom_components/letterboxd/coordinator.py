@@ -1,6 +1,7 @@
 """Data update coordinator for Letterboxd."""
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 from datetime import datetime, timedelta
@@ -154,7 +155,7 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
                             ATTR_IMAGE_URL: image_url,
                             ATTR_DATE_ADDED: date_added,
                             ATTR_LINK: link,
-                            "unique_id": self._generate_movie_unique_id(title, link, date_added),
+                            "unique_id": self._movie_unique_id_from_link_date(link, date_added),
                         }
                         rss_movies.append(movie_data)
 
@@ -214,26 +215,28 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
             "last_update": datetime.now().isoformat(),
         }
 
+    def _movie_unique_id_from_link_date(self, link: str, date_added: str | None) -> str:
+        """Generate stable unique_id from link and date (for migration and RSS)."""
+        raw = f"{link}|{date_added or ''}"
+        digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
+        return f"{self.entry_id}_{self.feed_name}_{digest}"
+
     async def _load_stored(self) -> list[dict[str, Any]]:
-        """Load stored movie history for this feed."""
+        """Load stored movie history for this feed; migrate to hash-based unique_id."""
         data = await self._store.async_load()
-        if data and isinstance(data.get("movies"), list):
-            return data["movies"]
-        return []
+        if not data or not isinstance(data.get("movies"), list):
+            return []
+        movies = data["movies"]
+        for m in movies:
+            link = m.get(ATTR_LINK) or ""
+            date_added = m.get(ATTR_DATE_ADDED)
+            m["unique_id"] = self._movie_unique_id_from_link_date(link, date_added)
+        return movies
 
     async def _save_stored(self, movies: list[dict[str, Any]]) -> None:
         """Save movie history to store."""
         await self._store.async_save({"movies": movies})
 
-    def _generate_movie_unique_id(self, title: str, link: str, date_added: str | None) -> str:
-        """Generate a unique ID for a movie within this feed."""
-        # Use feed name + movie title + date to ensure uniqueness
-        # Even if same movie appears in multiple feeds, they'll have different IDs
-        base_id = f"{self.entry_id}_{self.feed_name}_{title}_{date_added or link}"
-        # Clean up the ID to be valid for entity IDs
-        base_id = re.sub(r"[^a-zA-Z0-9_]", "_", base_id)
-        base_id = base_id.lower()
-        return base_id[:255]  # Limit length
 
 
 class LetterboxdDataUpdateCoordinator:
