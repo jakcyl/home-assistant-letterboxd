@@ -35,6 +35,41 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 STORE_VERSION = 1
+
+
+def _str_from_entry(entry: Any, *keys: str) -> str | None:
+    """Get first present namespaced string from a feed entry (e.g. letterboxd_filmtitle)."""
+    for key in keys:
+        val = entry.get(key)
+        if val is not None and str(val).strip():
+            return str(val).strip()
+    return None
+
+
+def _float_from_entry(entry: Any, *keys: str) -> float | None:
+    """Get first present namespaced float from a feed entry (e.g. letterboxd_memberrating)."""
+    for key in keys:
+        val = entry.get(key)
+        if val is not None:
+            try:
+                return float(val)
+            except (TypeError, ValueError):
+                pass
+    return None
+
+
+def _int_from_entry(entry: Any, *keys: str) -> int | None:
+    """Get first present namespaced int from a feed entry (e.g. letterboxd_filmyear)."""
+    for key in keys:
+        val = entry.get(key)
+        if val is not None:
+            try:
+                return int(val)
+            except (TypeError, ValueError):
+                pass
+    return None
+
+
 STORE_KEY_PREFIX = "letterboxd"
 
 
@@ -99,28 +134,42 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
                     feed = feedparser.parse(text)
 
                     for entry in feed.entries:
-                        title = entry.get("title", "").strip()
                         link = entry.get("link", "")
                         published = entry.get("published_parsed")
 
-                        rating = None
-                        if "★" in title:
-                            stars = title.count("★")
-                            half_star = "½" in title
-                            rating = stars + (0.5 if half_star else 0)
-                            title = title.split("★")[0].strip()
+                        # Prefer Letterboxd XML elements when present
+                        rating = _float_from_entry(entry, "letterboxd_memberrating", "letterboxd_memberRating")
+                        film_title = _str_from_entry(entry, "letterboxd_filmtitle", "letterboxd_filmTitle")
+                        film_year = _int_from_entry(entry, "letterboxd_filmyear", "letterboxd_filmYear")
+                        watched_date = _str_from_entry(entry, "letterboxd_watcheddate", "letterboxd_watchedDate")
 
-                        year = None
-                        year_match = re.search(r',\s*(\d{4})\s*-?\s*$', title)
-                        if year_match:
-                            year = int(year_match.group(1))
-                            title = re.sub(r',\s*\d{4}\s*-?\s*$', '', title)
-                        elif "(" in title and ")" in title:
-                            year_match = re.search(r'\((\d{4})\)', title)
+                        raw_title = entry.get("title", "").strip()
+                        if film_title:
+                            title = film_title
+                            year = film_year
+                        else:
+                            title = raw_title
+                            if "★" in title or "½" in title:
+                                if rating is None:
+                                    stars = title.count("★")
+                                    half_star = "½" in title
+                                    rating = stars + (0.5 if half_star else 0)
+                                title = re.sub(r"\s*-\s*★*½?\s*$", "", title).strip()
+                                if "★" in title:
+                                    title = title.split("★")[0].strip()
+                            year = None
+                            year_match = re.search(r",\s*(\d{4})\s*(?:-\s*)?$", title)
                             if year_match:
                                 year = int(year_match.group(1))
-                            title = title.rsplit("(", 1)[0].strip()
-                        title = title.strip()
+                                title = re.sub(r',\s*\d{4}\s*-?\s*$', '', title)
+                            elif "(" in title and ")" in title:
+                                year_match = re.search(r'\((\d{4})\)', title)
+                                if year_match:
+                                    year = int(year_match.group(1))
+                                title = title.rsplit("(", 1)[0].strip()
+                            if film_year is not None:
+                                year = film_year
+                            title = title.strip()
 
                         image_url = None
                         if hasattr(entry, "content") and entry.content:
@@ -140,8 +189,8 @@ class LetterboxdFeedCoordinator(DataUpdateCoordinator):
                             if img_match:
                                 image_url = img_match.group(1)
 
-                        date_added = None
-                        if published:
+                        date_added = watched_date
+                        if not date_added and published:
                             try:
                                 date_added = datetime(*published[:6]).isoformat()
                             except (ValueError, TypeError):
