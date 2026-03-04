@@ -32,5 +32,10 @@ ATTR_YEAR = "year"
 
 # Sensor names
 SENSOR_LATEST_MOVIE = "latest_movie"
+SENSOR_LATEST_TITLE = "latest_title"
+SENSOR_LATEST_YEAR = "latest_year"
+SENSOR_LATEST_RATING = "latest_rating"
+SENSOR_LATEST_DATE_ADDED = "latest_date_added"
 SENSOR_RECENT_MOVIES = "recent_movies"
 SENSOR_MOVIE_PREFIX = "movie"
+IMAGE_LATEST_POSTER = "latest_poster"

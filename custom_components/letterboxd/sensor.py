@@ -24,6 +24,10 @@ from .const import (
     CONF_FEED_NAME,
     DOMAIN,
     SENSOR_LATEST_MOVIE,
+    SENSOR_LATEST_TITLE,
+    SENSOR_LATEST_YEAR,
+    SENSOR_LATEST_RATING,
+    SENSOR_LATEST_DATE_ADDED,
     SENSOR_RECENT_MOVIES,
 )
 from .coordinator import LetterboxdDataUpdateCoordinator, LetterboxdFeedCoordinator
@@ -101,6 +105,30 @@ async def async_setup_entry(
             )
         )
         entities.append(
+            LetterboxdLatestTitleSensor(
+                coordinator=feed_coordinator,
+                feed_name=feed_name,
+            )
+        )
+        entities.append(
+            LetterboxdLatestYearSensor(
+                coordinator=feed_coordinator,
+                feed_name=feed_name,
+            )
+        )
+        entities.append(
+            LetterboxdLatestRatingSensor(
+                coordinator=feed_coordinator,
+                feed_name=feed_name,
+            )
+        )
+        entities.append(
+            LetterboxdLatestDateAddedSensor(
+                coordinator=feed_coordinator,
+                feed_name=feed_name,
+            )
+        )
+        entities.append(
             LetterboxdRecentMoviesSensor(
                 coordinator=feed_coordinator,
                 feed_name=feed_name,
@@ -113,6 +141,7 @@ async def async_setup_entry(
     # When coordinator updates, refresh device entities so new movies get devices
     # and stale ones are removed (dashboard stays in sync with latest watched).
     device_suffixes = ("_title", "_rating", "_year", "_date_added")
+    latest_suffixes = (f"_{SENSOR_LATEST_TITLE}", f"_{SENSOR_LATEST_YEAR}", f"_{SENSOR_LATEST_RATING}", f"_{SENSOR_LATEST_DATE_ADDED}")
 
     async def _update_device_entities() -> None:
         new_device = _device_sensor_entities(coordinator)
@@ -131,9 +160,12 @@ async def async_setup_entry(
                 continue
             if not ent.entity_id.startswith("sensor."):
                 continue
-            if ent.unique_id and ent.unique_id.endswith(device_suffixes):
-                if ent.unique_id not in current_unique_ids:
-                    to_remove.append(ent.entity_id)
+            if not ent.unique_id:
+                continue
+            if ent.unique_id.endswith(latest_suffixes):
+                continue
+            if ent.unique_id.endswith(device_suffixes) and ent.unique_id not in current_unique_ids:
+                to_remove.append(ent.entity_id)
         for entity_id in to_remove:
             registry.async_remove(entity_id)
         to_add = [e for e in new_device if e.unique_id and e.unique_id not in existing_sensor_ids]
@@ -197,6 +229,93 @@ class LetterboxdLatestMovieSensor(CoordinatorEntity, SensorEntity):
             ATTR_LINK: latest_movie.get(ATTR_LINK),
             ATTR_FEED_NAME: self._feed_name,
         }
+
+
+def _latest_movie_data(coordinator: LetterboxdFeedCoordinator) -> dict[str, Any] | None:
+    """Get latest movie dict from coordinator data."""
+    if not coordinator.data:
+        return None
+    return coordinator.data.get("latest_movie")
+
+
+class LetterboxdLatestTitleSensor(CoordinatorEntity, SensorEntity):
+    """Stable sensor: always shows the latest movie title (for dashboard)."""
+
+    _attr_icon = "mdi:movie"
+
+    def __init__(self, coordinator: LetterboxdFeedCoordinator, feed_name: str) -> None:
+        super().__init__(coordinator)
+        self._feed_name = feed_name
+        self._attr_name = f"Letterboxd Latest Title ({feed_name})"
+        self._attr_unique_id = f"{coordinator.entry_id}_{feed_name}_{SENSOR_LATEST_TITLE}"
+        self._attr_suggested_object_id = f"letterboxd_{feed_slug(feed_name)}_latest_title"
+
+    @property
+    def native_value(self) -> str:
+        latest = _latest_movie_data(self.coordinator)
+        if latest:
+            return latest.get(ATTR_MOVIE_TITLE) or "Unknown"
+        return "No movies"
+
+
+class LetterboxdLatestYearSensor(CoordinatorEntity, SensorEntity):
+    """Stable sensor: always shows the latest movie year (for dashboard)."""
+
+    _attr_icon = "mdi:calendar"
+
+    def __init__(self, coordinator: LetterboxdFeedCoordinator, feed_name: str) -> None:
+        super().__init__(coordinator)
+        self._feed_name = feed_name
+        self._attr_name = f"Letterboxd Latest Year ({feed_name})"
+        self._attr_unique_id = f"{coordinator.entry_id}_{feed_name}_{SENSOR_LATEST_YEAR}"
+        self._attr_suggested_object_id = f"letterboxd_{feed_slug(feed_name)}_latest_year"
+
+    @property
+    def native_value(self) -> int | None:
+        latest = _latest_movie_data(self.coordinator)
+        if latest:
+            return latest.get(ATTR_YEAR)
+        return None
+
+
+class LetterboxdLatestRatingSensor(CoordinatorEntity, SensorEntity):
+    """Stable sensor: always shows the latest movie rating (for dashboard)."""
+
+    _attr_icon = "mdi:star"
+
+    def __init__(self, coordinator: LetterboxdFeedCoordinator, feed_name: str) -> None:
+        super().__init__(coordinator)
+        self._feed_name = feed_name
+        self._attr_name = f"Letterboxd Latest Rating ({feed_name})"
+        self._attr_unique_id = f"{coordinator.entry_id}_{feed_name}_{SENSOR_LATEST_RATING}"
+        self._attr_suggested_object_id = f"letterboxd_{feed_slug(feed_name)}_latest_rating"
+
+    @property
+    def native_value(self) -> float | None:
+        latest = _latest_movie_data(self.coordinator)
+        if latest:
+            return latest.get(ATTR_RATING)
+        return None
+
+
+class LetterboxdLatestDateAddedSensor(CoordinatorEntity, SensorEntity):
+    """Stable sensor: always shows the latest movie date added (for dashboard)."""
+
+    _attr_icon = "mdi:calendar-plus"
+
+    def __init__(self, coordinator: LetterboxdFeedCoordinator, feed_name: str) -> None:
+        super().__init__(coordinator)
+        self._feed_name = feed_name
+        self._attr_name = f"Letterboxd Latest Date Added ({feed_name})"
+        self._attr_unique_id = f"{coordinator.entry_id}_{feed_name}_{SENSOR_LATEST_DATE_ADDED}"
+        self._attr_suggested_object_id = f"letterboxd_{feed_slug(feed_name)}_latest_date_added"
+
+    @property
+    def native_value(self) -> str | None:
+        latest = _latest_movie_data(self.coordinator)
+        if latest:
+            return latest.get(ATTR_DATE_ADDED)
+        return None
 
 
 class LetterboxdRecentMoviesSensor(CoordinatorEntity, SensorEntity):

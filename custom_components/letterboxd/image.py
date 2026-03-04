@@ -18,9 +18,25 @@ from .const import (
     ATTR_IMAGE_URL,
     CONF_EXPOSE_AS_DEVICES,
     DOMAIN,
+    IMAGE_LATEST_POSTER,
 )
 from .coordinator import LetterboxdDataUpdateCoordinator, LetterboxdFeedCoordinator
 from .helpers import feed_slug, movie_slug
+
+
+def _latest_poster_entities(
+    coordinator: LetterboxdDataUpdateCoordinator,
+) -> list[ImageEntity]:
+    """Build one 'latest poster' image per feed (stable entity_id, always shows latest movie)."""
+    entities: list[ImageEntity] = []
+    for feed_name, feed_coordinator in coordinator.feed_coordinators.items():
+        entities.append(
+            LetterboxdLatestPosterImage(
+                coordinator=feed_coordinator,
+                feed_name=feed_name,
+            )
+        )
+    return entities
 
 
 def _device_image_entities(
@@ -56,11 +72,13 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Letterboxd image entities (poster per movie device)."""
+    """Set up Letterboxd image entities (latest poster per feed + poster per movie device)."""
     coordinator: LetterboxdDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    entities = _device_image_entities(coordinator)
-    async_add_entities(entities)
+    # Stable "latest poster" per feed – dashboard can use this and it always updates
+    latest_entities = _latest_poster_entities(coordinator)
+    device_entities = _device_image_entities(coordinator)
+    async_add_entities(latest_entities + device_entities)
 
     async def _update_device_entities() -> None:
         new_device = _device_image_entities(coordinator)
@@ -79,7 +97,7 @@ async def async_setup_entry(
                 continue
             if not ent.entity_id.startswith("image."):
                 continue
-            if ent.unique_id and ent.unique_id.endswith("_poster"):
+            if ent.unique_id and ent.unique_id.endswith("_poster") and not ent.unique_id.endswith(f"_{IMAGE_LATEST_POSTER}"):
                 if ent.unique_id not in current_unique_ids:
                     to_remove.append(ent.entity_id)
         for entity_id in to_remove:
@@ -102,6 +120,48 @@ def _device_name(movie: dict[str, Any]) -> str:
     if year:
         return f"{title} ({year})"
     return f"Letterboxd - {title}"
+
+
+class LetterboxdLatestPosterImage(CoordinatorEntity, ImageEntity):
+    """Poster image that always shows the latest watched movie (stable entity_id for dashboards)."""
+
+    def __init__(
+        self,
+        coordinator: LetterboxdFeedCoordinator,
+        feed_name: str,
+    ) -> None:
+        super().__init__(coordinator)
+        hass = coordinator.hass
+        self._client = get_async_client(hass, verify_ssl=False)
+        self.access_tokens = collections.deque([], 2)
+        self.async_update_token()
+        try:
+            ImageEntity.__init__(self, hass, verify_ssl=False)
+        except Exception:
+            pass
+        self._feed_name = feed_name
+        self._attr_name = f"Letterboxd {feed_slug(feed_name)} Latest Poster"
+        self._attr_unique_id = f"{coordinator.entry_id}_{feed_name}_{IMAGE_LATEST_POSTER}"
+        self._attr_suggested_object_id = f"letterboxd_{feed_slug(feed_name)}_latest_poster"
+        self._attr_image_last_updated = datetime.now()
+
+    @property
+    def image_url(self) -> str | None:
+        latest = (self.coordinator.data or {}).get("latest_movie")
+        if not latest:
+            return "https://placehold.co/300x450/png?text=No+poster"
+        url = latest.get(ATTR_IMAGE_URL)
+        if url and isinstance(url, str) and url.strip():
+            return url.strip()
+        return "https://placehold.co/300x450/png?text=No+poster"
+
+    @property
+    def available(self) -> bool:
+        return bool(self.coordinator.last_update_success)
+
+    def _handle_coordinator_update(self) -> None:
+        self._attr_image_last_updated = datetime.now()
+        super()._handle_coordinator_update()
 
 
 class LetterboxdMoviePosterImage(CoordinatorEntity, ImageEntity):
